@@ -9,17 +9,35 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
+    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
+        // skip the program name
+        args.next();
 
-        // args has the exe in position one
-        // so panic on more than 3 inputs
         if args.len() > 4 {
             return Err("Extra operands given.");
+        } else if args.len() == 0 {
+            return Err("Missing operand.");
+        } else if args.len() == 1 {
+            let num = match args.next() {
+                Some(arg) => {
+                    // one arg must be an integer and the start is today
+                    let _foo: i64 = match arg.parse() {
+                        Ok(n) => {
+                            n
+                        },
+                        Err(_) => {
+                            return Err("Invalid integer argument.");
+                        },
+                    };
+
+                },
+                None => return Err("Should never happen we checked the length!"),
+            };
         }
 
-        let input = args[1].clone();
-        let output = args[2].clone();
-        let separator = args[3].clone();
+        let input = String::from("2017-01-01");
+        let output = String::from("2017-02-01");
+        let separator = String::from(" ");
 
         Ok(Config { input, output, separator })
     }
