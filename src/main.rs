@@ -5,11 +5,22 @@ use clap::{Arg, App};
 use dseq::Config;
 
 
+const USAGE: &str = "
+    dseq [OPTION]... LAST
+    dseq [OPTION]... FIRST LAST
+    dseq [OPTION]... FIRST INCREMENT LAST";
+
+// TODO: define TEMPLATE and set in App
+
 fn main() {
+    const DEFAULT_INCREMENT: i64 = 1;
+
+    // default increment value - can be changed in 3 argument form
     let matches = App::new("dseq")
         .version("1.0")
         .about("Print dates from first to last, in steps of INCREMENT.")
         .author("Dallas Lynn <dallas@dallaslynn.com>")
+        .usage(USAGE)
         .arg(Arg::with_name("separator")
              .short("s")
              .long("separator")
@@ -58,4 +69,26 @@ fn main() {
 
     // clap provides a value_t macro but we only have 1-3 positional args possible so
     // we do it by hand for now.
+
+    // TODO: must be some more elegant way to do this.
+    // if there is a third arg then the input is FIRST INCREMENT LAST
+    if matches.is_present("arg3") {
+        let first = matches.value_of("arg1").unwrap();
+        let increment = matches.value_of("arg2").unwrap();
+        let last = matches.value_of("arg3").unwrap();
+        println!("3 values given {} {} {}", first, increment, last);
+    } else if matches.is_present("arg2") {
+        // two args mean the values are FIRST LAST
+        let first = matches.value_of("arg1").unwrap();
+        let increment = DEFAULT_INCREMENT;
+        let last = matches.value_of("arg2").unwrap();
+        println!("2 values given {} {}", first, last);
+    } else {
+        // first is today by default if no value given.
+        // let first = matches.value_of("arg1");
+        let increment = DEFAULT_INCREMENT;
+        let last = matches.value_of("arg1").unwrap();
+        println!("1 value given {}", last);
+        // one argument given.
+    }
 }
