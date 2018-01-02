@@ -1,20 +1,22 @@
-extern crate dseq_rs as dseq;
+extern crate dseq;
 extern crate clap;
 
+use std::process;
 use clap::{Arg, App};
 use dseq::Config;
-
 
 const USAGE: &str = "
     dseq [OPTION]... LAST
     dseq [OPTION]... FIRST LAST
     dseq [OPTION]... FIRST INCREMENT LAST";
 
-// TODO: define TEMPLATE and set in App
+// TODO: define TEMPLATE and set in App if want to
+// match the C version help output exactly.
+
+// TODO: clap interprets a negative number invoked like dseq -100 as a flag and gives
+// an error - figure out how to allow it to count downward by taking that input.
 
 fn main() {
-    const DEFAULT_INCREMENT: i64 = 1;
-
     // default increment value - can be changed in 3 argument form
     let matches = App::new("dseq")
         .version("1.0")
@@ -36,6 +38,13 @@ fn main() {
             .takes_value(true)
             .default_value("%Y-%m-%d")
             .help("print dates in this format")
+        ).
+        arg(Arg::with_name("input_format")
+            .short("i")
+            .long("input")
+            .takes_value(true)
+            .default_value("%Y-%m-%d")
+            .help("give argument dates in this format")
         ).
         arg(Arg::with_name("arg1")
             .index(1)
@@ -66,29 +75,10 @@ fn main() {
                     $ dseq -o %x -s : 10\n")
         .get_matches();
 
+    let config = Config::new(matches).unwrap_or_else(|err| {
+        eprintln!("{}", err);
+        process::exit(1);
+    });
 
-    // clap provides a value_t macro but we only have 1-3 positional args possible so
-    // we do it by hand for now.
-
-    // TODO: must be some more elegant way to do this.
-    // if there is a third arg then the input is FIRST INCREMENT LAST
-    if matches.is_present("arg3") {
-        let first = matches.value_of("arg1").unwrap();
-        let increment = matches.value_of("arg2").unwrap();
-        let last = matches.value_of("arg3").unwrap();
-        println!("3 values given {} {} {}", first, increment, last);
-    } else if matches.is_present("arg2") {
-        // two args mean the values are FIRST LAST
-        let first = matches.value_of("arg1").unwrap();
-        let increment = DEFAULT_INCREMENT;
-        let last = matches.value_of("arg2").unwrap();
-        println!("2 values given {} {}", first, last);
-    } else {
-        // first is today by default if no value given.
-        // let first = matches.value_of("arg1");
-        let increment = DEFAULT_INCREMENT;
-        let last = matches.value_of("arg1").unwrap();
-        println!("1 value given {}", last);
-        // one argument given.
-    }
+    
 }
