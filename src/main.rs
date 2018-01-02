@@ -2,7 +2,7 @@ extern crate dseq;
 extern crate clap;
 
 use std::process;
-use clap::{Arg, App};
+use clap::{App, AppSettings, Arg};
 use dseq::Args;
 
 const USAGE: &str = "
@@ -10,12 +10,11 @@ const USAGE: &str = "
     dseq [OPTION]... FIRST LAST
     dseq [OPTION]... FIRST INCREMENT LAST";
 
-// TODO: clap interprets a negative number invoked like dseq -100 as a flag and gives
-// an error - figure out how to allow it to count downward by taking that input.
-
 fn main() {
     // default increment value - can be changed in 3 argument form
     let matches = App::new("dseq")
+        // we need this so we can give a negative number like dseq -20
+        .global_settings(&[AppSettings::AllowLeadingHyphen])
         .version("1.0")
         .about("Print dates from first to last, in steps of INCREMENT.")
         .author("Dallas Lynn <dallas@dallaslynn.com>")
@@ -27,8 +26,7 @@ fn main() {
              .default_value("\n")
              .help("use STRING to separate dates (default: \\n)")
         ).
-        // TODO: validate via custom clap validator or otherwise
-        // that this is a valid format string.
+        // TODO: validate that this is a valid chrono format string.
         arg(Arg::with_name("output_format")
             .short("o")
             .long("output")
