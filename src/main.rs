@@ -80,5 +80,5 @@ fn main() {
         process::exit(1);
     });
 
-    
+    dseq::print_dates(config);
 }

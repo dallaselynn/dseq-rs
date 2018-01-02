@@ -2,12 +2,10 @@ extern crate chrono;
 #[macro_use]
 extern crate clap;
 
-use std::error::Error;
 use chrono::naive::{NaiveDate};
 use chrono::{Duration, Local};
 
 pub struct Config {
-    input_format: String,
     output_format: String,
     separator: String,
     step_size: i64,
@@ -49,7 +47,6 @@ impl Config {
                 Err(_) => return Err("Invalid integer argument for step size")
             };
 
-            // TODO: is there a better way to bake this into the Result above?
             if step_size == 0 {
                 return Err("Step size can not be zero.");
             }
@@ -96,12 +93,42 @@ impl Config {
             };
         }
 
-        Ok(Config { input_format, output_format, separator, step_size, start_date, end_date })        
+        //   conceptually counting down with a positive step or counting up with a negative step
+        //   makes no sense, attempt to do what one means by inverting the signs in those cases.
+        if (start_date > end_date) && (step_size > 0) || (start_date < end_date) && step_size < 0 {
+            step_size = -step_size;
+        }
+        
+        Ok(Config { output_format, separator, step_size, start_date, end_date })        
     }
 }
 
-pub fn print_dates(config: Config) {
+// TODO: this should be an iterator
+// TODO: this should return a result?
+// TODO: config probably isn't a good name for this variable.
+pub fn print_dates(c: Config) {
+    let is_out_of_range = |next|  {
+        if (c.step_size > 0 && next > c.end_date) || (c.step_size < 0 && next < c.end_date) {
+            true
+        } else {
+            false
+        }
+    };
     
+    let mut next = c.start_date;
+    let mut out_of_range = is_out_of_range(next);
+    
+    loop {
+        print!("{}", next.format(c.output_format.as_str()));
+        // TODO: check this value
+        next += Duration::days(c.step_size);
+
+        if is_out_of_range(next) {
+            break;
+        }
+        print!("{}", c.separator);
+    }
+    println!("");
 }
 
 
