@@ -3,15 +3,12 @@ extern crate clap;
 
 use std::process;
 use clap::{Arg, App};
-use dseq::Config;
+use dseq::Args;
 
 const USAGE: &str = "
     dseq [OPTION]... LAST
     dseq [OPTION]... FIRST LAST
     dseq [OPTION]... FIRST INCREMENT LAST";
-
-// TODO: define TEMPLATE and set in App if want to
-// match the C version help output exactly.
 
 // TODO: clap interprets a negative number invoked like dseq -100 as a flag and gives
 // an error - figure out how to allow it to count downward by taking that input.
@@ -49,12 +46,15 @@ fn main() {
         arg(Arg::with_name("arg1")
             .index(1)
             .required(true)
+            .hidden(true)
         ).
         arg(Arg::with_name("arg2")
             .index(2)
+            .hidden(true)
         ).
         arg(Arg::with_name("arg3")
             .index(3)
+            .hidden(true)
         ).
         after_help("If only LAST is given, first defaults to today.  If INCREMENT is omitted, it\n \
                     defaults to 1. If FIRST is later than LAST, the sequence will be printed\n \
@@ -75,10 +75,10 @@ fn main() {
                     $ dseq -o %x -s : 10\n")
         .get_matches();
 
-    let config = Config::new(matches).unwrap_or_else(|err| {
+    let args = Args::new(matches).unwrap_or_else(|err| {
         eprintln!("{}", err);
         process::exit(1);
     });
 
-    dseq::print_dates(config);
+    dseq::print_dates(args);
 }

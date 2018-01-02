@@ -2,10 +2,10 @@ extern crate chrono;
 #[macro_use]
 extern crate clap;
 
-use chrono::naive::{NaiveDate};
 use chrono::{Duration, Local};
+use chrono::naive::{NaiveDate};
 
-pub struct Config {
+pub struct Args {
     output_format: String,
     separator: String,
     step_size: i64,
@@ -13,8 +13,8 @@ pub struct Config {
     end_date: NaiveDate,
 }
 
-impl Config {
-    pub fn new(matches: clap::ArgMatches) -> Result<Config, &'static str> {
+impl Args {
+    pub fn new(matches: clap::ArgMatches) -> Result<Args, &'static str> {
         let today = Local::today().naive_local();
         // default step size is 1
         let mut step_size: i64 = 1;
@@ -23,13 +23,13 @@ impl Config {
         
         // output_format, input_format and separator have defaults
         // so they should always be present
-        // TODO: test this is a valid chrono format
+        // TODO: test this is a valid chrono format and give useful error
         let input_format = match matches.value_of("input_format") {
-            Some(arg) =>String::from(arg),
+            Some(arg) => String::from(arg),
             None => return Err("No input format specified.")
         };
 
-      let output_format = match matches.value_of("output_format") {
+        let output_format = match matches.value_of("output_format") {
             Some(arg) =>String::from(arg),
             None => return Err("No output format specified.")
         };
@@ -99,14 +99,13 @@ impl Config {
             step_size = -step_size;
         }
         
-        Ok(Config { output_format, separator, step_size, start_date, end_date })        
+        Ok(Args { output_format, separator, step_size, start_date, end_date })        
     }
 }
 
 // TODO: this should be an iterator
-// TODO: this should return a result?
-// TODO: config probably isn't a good name for this variable.
-pub fn print_dates(c: Config) {
+// TODO: should return a result or such?
+pub fn print_dates(c: Args) {
     let is_out_of_range = |next|  {
         if (c.step_size > 0 && next > c.end_date) || (c.step_size < 0 && next < c.end_date) {
             true
@@ -120,14 +119,16 @@ pub fn print_dates(c: Config) {
     
     loop {
         print!("{}", next.format(c.output_format.as_str()));
-        // TODO: check this value
+        // TODO: check this value is good
         next += Duration::days(c.step_size);
 
         if is_out_of_range(next) {
             break;
         }
+        
         print!("{}", c.separator);
     }
+    
     println!("");
 }
 
