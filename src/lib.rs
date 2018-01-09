@@ -14,13 +14,21 @@ pub struct Args {
 }
 
 impl Args {
+    pub fn parse_date_string(s: &str, format: &str) -> Result<NaiveDate, &'static str> {
+        let d = match NaiveDate::parse_from_str(s, format) {
+            Ok(d) => d,
+            Err(_) => return Err("Failed to parse date.")
+        };
+        Ok(d)
+    }
+
     pub fn new(matches: clap::ArgMatches) -> Result<Args, &'static str> {
         let today = Local::today().naive_local();
         // default step size is 1
         let mut step_size: i64 = 1;
         let mut start_date = today;
         let mut end_date = today;
-        
+
         // output_format, input_format and separator have defaults
         // so they should always be present
         // TODO: test this is a valid chrono format and give useful error
@@ -33,7 +41,7 @@ impl Args {
             Some(arg) =>String::from(arg),
             None => return Err("No output format specified.")
         };
-        
+
         // this has a default so it should never not be present
         let separator = match matches.value_of("separator") {
             Some(arg) => String::from(arg),
@@ -54,31 +62,17 @@ impl Args {
             let start_arg = matches.value_of("arg1").unwrap();
             let end_arg = matches.value_of("arg3").unwrap();
 
-            start_date = match NaiveDate::parse_from_str(start_arg, input_format.as_str()) {
-                Ok(d) => d,
-                Err(_) => return Err("Failed to parse start date")
-            };
+            start_date = Args::parse_date_string(&start_arg, &input_format.as_str())?;
+            end_date = Args::parse_date_string(&end_arg, &input_format.as_str())?;
 
-            end_date = match NaiveDate::parse_from_str(end_arg, input_format.as_str()) {
-                Ok(d) => d,
-                Err(_) => return Err("Failed to parse end date")
-            };            
-            
         } else if matches.is_present("arg2") {
             // two args mean the values are START END - we can unwrap because
             // the else if condition checks for arg2 and arg1 is always required to be present
             let start_arg = matches.value_of("arg1").unwrap();
             let end_arg = matches.value_of("arg2").unwrap();
-            
-            start_date = match NaiveDate::parse_from_str(start_arg, input_format.as_str()) {
-                Ok(d) => d,
-                Err(_) => return Err("Failed to parse start date")
-            };
 
-            end_date = match NaiveDate::parse_from_str(end_arg, input_format.as_str()) {
-                Ok(d) => d,
-                Err(_) => return Err("Failed to parse end date")
-            };
+            start_date = Args::parse_date_string(&start_arg, &input_format.as_str())?;
+            end_date = Args::parse_date_string(&end_arg, &input_format.as_str())?;
         } else {
             // one arg must be an integer number of dates to output starting today
             let days_to_output = match value_t!(matches, "arg1", i64) {
@@ -98,8 +92,8 @@ impl Args {
         if (start_date > end_date) && (step_size > 0) || (start_date < end_date) && step_size < 0 {
             step_size = -step_size;
         }
-        
-        Ok(Args { output_format, separator, step_size, start_date, end_date })        
+
+        Ok(Args { output_format, separator, step_size, start_date, end_date })
     }
 }
 
@@ -113,10 +107,12 @@ pub fn print_dates(c: Args) {
             false
         }
     };
-    
+
     let mut next = c.start_date;
-    let mut out_of_range = is_out_of_range(next);
-    
+    if is_out_of_range(next) {
+        return
+    }
+
     loop {
         print!("{}", next.format(c.output_format.as_str()));
         // TODO: check this value is good
@@ -125,27 +121,9 @@ pub fn print_dates(c: Args) {
         if is_out_of_range(next) {
             break;
         }
-        
+
         print!("{}", c.separator);
     }
-    
+
     println!("");
-}
-
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_make_date_vec() {
-        let start = "2017-01-01";
-        let end = "2017-01-02";
-        let step : i64 = 1;
-
-        assert_eq!(
-            vec!["2017-01-01", "2017-01-02"],
-            make_date_vec(start, end, step)
-        );
-    }
 }
